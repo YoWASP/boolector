@@ -1,0 +1,42 @@
+diff --git a/src/btorsim/btorsim.cpp b/src/btorsim/btorsim.cpp
+index 200bc46..2ba4d86 100644
+--- a/src/btorsim/btorsim.cpp
++++ b/src/btorsim/btorsim.cpp
+@@ -2036,3 +2036,16 @@ main (int32_t argc, char const *argv[])
+     if (next_state[i].type) next_state[i].remove ();
+   return 0;
+ }
++
++#if defined(__wasm)
++extern "C" {
++	// FIXME: WASI does not currently support exceptions.
++	void* __cxa_allocate_exception(size_t thrown_size) throw() {
++		return malloc(thrown_size);
++	}
++	bool __cxa_uncaught_exception() throw();
++	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
++		std::terminate();
++	}
++}
++#endif
+diff --git a/src/btorsplit.cpp b/src/btorsplit.cpp
+index a514003..7fbb86e 100644
+--- a/src/btorsplit.cpp
++++ b/src/btorsplit.cpp
+@@ -175,3 +175,16 @@ main(int argc, char *argv[])
+ 
+   return EXIT_SUCCESS;
+ }
++
++#if defined(__wasm)
++extern "C" {
++	// FIXME: WASI does not currently support exceptions.
++	void* __cxa_allocate_exception(size_t thrown_size) throw() {
++		return malloc(thrown_size);
++	}
++	bool __cxa_uncaught_exception() throw();
++	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
++		std::terminate();
++	}
++}
++#endif

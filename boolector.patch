@@ -1,0 +1,103 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index b51e10a1..57df0e0a 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -158,6 +158,9 @@ set_target_properties(boolector-bin
+   PROPERTIES
+     OUTPUT_NAME boolector
+     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
++if (WASI)
++  set_property(TARGET boolector-bin PROPERTY SUFFIX ".wasm")
++endif()
+ install(TARGETS boolector-bin DESTINATION bin)
+ 
+ #-----------------------------------------------------------------------------#
+diff --git a/src/boolector.c b/src/boolector.c
+index 2df5bbe6..06c75490 100644
+--- a/src/boolector.c
++++ b/src/boolector.c
+@@ -293,8 +293,10 @@ boolector_delete (Btor *btor)
+   BTOR_TRAPI ("");
+   if (btor->close_apitrace == 1)
+     fclose (btor->apitrace);
++#ifndef __wasm
+   else if (btor->close_apitrace == 2)
+     pclose (btor->apitrace);
++#endif
+ #ifndef NDEBUG
+   if (btor->clone) boolector_delete (btor->clone);
+ #endif
+diff --git a/src/btormain.c b/src/btormain.c
+index 078bdc30..fde14230 100644
+--- a/src/btormain.c
++++ b/src/btormain.c
+@@ -21,7 +21,9 @@
+ 
+ #include <assert.h>
+ #include <limits.h>
++#ifndef __wasm
+ #include <signal.h>
++#endif
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -1061,7 +1063,9 @@ boolector_main (int32_t argc, char **argv)
+       else if (btor_util_file_has_suffix (g_app->infile_name, ".zip"))
+         sprintf (cmd, "unzip -p %s", g_app->infile_name);
+ 
++#ifndef __wasm
+       if ((g_app->infile = popen (cmd, "r"))) g_app->close_infile = 2;
++#endif
+ 
+       BTOR_DELETEN (g_app->mm, cmd, len + 40);
+     }
+@@ -1595,8 +1599,10 @@ DONE:
+ 
+   if (g_app->close_infile == 1)
+     fclose (g_app->infile);
++#ifndef __wasm
+   else if (g_app->close_infile == 2)
+     pclose (g_app->infile);
++#endif
+   if (g_app->close_outfile) fclose (g_app->outfile);
+ 
+   if (!boolector_get_opt (btor, BTOR_OPT_EXIT_CODES))
+diff --git a/src/btormcmain.c b/src/btormcmain.c
+index e3c5ed3f..be549217 100644
+--- a/src/btormcmain.c
++++ b/src/btormcmain.c
+@@ -818,7 +818,9 @@ main (int32_t argc, char **argv)
+       else if (btor_util_file_has_suffix (infile_name, ".zip"))
+         sprintf (cmd, "unzip -p %s", infile_name);
+ 
++#ifndef __wasm
+       if ((infile = popen (cmd, "r"))) close_infile = 2;
++#endif
+ 
+       BTOR_DELETEN (mm, cmd, len + 40);
+     }
+@@ -956,8 +958,10 @@ main (int32_t argc, char **argv)
+ DONE:
+   if (close_infile == 1)
+     fclose (infile);
++#ifndef __wasm
+   else if (close_infile == 2)
+     pclose (infile);
++#endif
+   boolector_mc_delete (mc);
+   while (!BTOR_EMPTY_STACK (opts))
+   {
+diff --git a/src/btortrapi.c b/src/btortrapi.c
+index 64308a4f..12c911a3 100644
+--- a/src/btortrapi.c
++++ b/src/btortrapi.c
+@@ -64,7 +64,9 @@ btor_trapi_open_trace (Btor *btor, const char *name)
+     len += 20;
+     BTOR_NEWN (btor->mm, cmd, len);
+     sprintf (cmd, "gzip -c > %s", name);
++#ifndef __wasm
+     if ((file = popen (cmd, "w"))) btor->close_apitrace = 2;
++#endif
+     BTOR_DELETEN (btor->mm, cmd, len);
+   }
+   else
