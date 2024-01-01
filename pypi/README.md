@@ -1,8 +1,8 @@
 YoWASP Boolector package
 ====================
 
-This package provides a Python package for interacting with the [Boolector][]
-[WebAssembly][] binaries. See the [overview of the YoWASP project][yowasp] for details.
+This package provides a Python interface to the [Boolector][] [WebAssembly][]
+binaries. See the [overview of the YoWASP project][yowasp] for details.
 
 [boolector]: https://github.com/Boolector/boolector
 [webassembly]: https://webassembly.org/
