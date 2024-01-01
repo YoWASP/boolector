@@ -1,0 +1,9 @@
+[submodule "boolector"]
+	path = boolector
+	url = https://github.com/Boolector/boolector.git
+[submodule "btor2tools"]
+	path = btor2tools
+	url = https://github.com/Boolector/btor2tools.git
+[submodule "lingeling"]
+	path = lingeling
+	url = https://github.com/arminbiere/lingeling.git
