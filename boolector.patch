@@ -1,17 +1,3 @@
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index b51e10a1..57df0e0a 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -158,6 +158,9 @@ set_target_properties(boolector-bin
-   PROPERTIES
-     OUTPUT_NAME boolector
-     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-+if (WASI)
-+  set_property(TARGET boolector-bin PROPERTY SUFFIX ".wasm")
-+endif()
- install(TARGETS boolector-bin DESTINATION bin)
- 
- #-----------------------------------------------------------------------------#
 diff --git a/src/boolector.c b/src/boolector.c
 index 2df5bbe6..06c75490 100644
 --- a/src/boolector.c
