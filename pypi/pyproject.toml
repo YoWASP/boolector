@@ -1,10 +1,9 @@
 [build-system]
-requires = ["pdm-backend"]
+requires = ["pdm-backend", "setuptools-scm>=8.0.4"]
 build-backend = "pdm.backend"
 
 [project]
 name = "yowasp-boolector"
-version = "0.1.0"
 description = ""
 authors = [
     {name = "William D. Jones", email = "thor0505@comcast.net"},
@@ -12,6 +11,7 @@ authors = [
 requires-python = ">=3.8"
 readme = "README.md"
 license = {text = "ISC"}
+dynamic = ["version"]
 
 dependencies = [
 	"importlib_resources; python_version<'3.9'",
@@ -20,3 +20,11 @@ dependencies = [
 
 [project.scripts]
 yowasp-boolector = "yowasp_boolector:_run_boolector_argv"
+
+[tool.pdm.version]
+source = "file"
+path = "version.txt"
+
+# Dummy section required, otherwise getting a setuptools_scm Configuration
+# will fail.
+[tool.setuptools_scm]

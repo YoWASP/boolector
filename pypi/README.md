@@ -9,6 +9,25 @@ binaries. See the [overview of the YoWASP project][yowasp] for details.
 [yowasp]: https://yowasp.github.io/
 
 
+Versioning
+----------
+
+The version of this package is derived from the upstream boolector package version in the ``X.Y[.Z]`` format, and is comprised of five or six parts in a ``X.Y.Z.N.postM[.dev0]`` format:
+
+1. ``X``: boolector major version
+2. ``Y``: boolector minor version
+3. ``Z``: boolector patch version
+4. ``N``: zero for packages built from boolector releases, ``N`` for packages built from unreleased boolector snapshots; ``N`` is the amount of commits since the latest release
+5. ``postM``: package build version; disambiguates different builds produced from the same boolector source tree
+6. ``dev0``: present only for packages built from unreleased boolector snapshots; marks these packages as pre-releases.
+   [`pdm`][pdm] appaears to automatically add a trailing `0` if not initially present.
+
+With this scheme, there is a direct correspondence between upstream versions and [PEP 440][pep440] Python package versions.
+
+[pdm]: https://pdm-project.org/latest/
+[pep440]: https://peps.python.org/pep-0440/
+
+
 Configuration
 -------------
 
