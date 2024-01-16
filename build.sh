@@ -18,11 +18,6 @@ WASI_TARGET="wasm32-wasi"
 WASI_SYSROOT="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot"
 WASI_CFLAGS="-flto"
 WASI_LDFLAGS="-flto -Wl,--strip-all"
-if [ ${THREADS:-0} -ne 0 ]; then
-  WASI_TARGET="${WASI_TARGET}-threads"
-  WASI_CFLAGS="${WASI_CFLAGS} -pthread"
-  WASI_LDFLAGS="${WASI_LDFLAGS} -Wl,--import-memory,--export-memory,--max-memory=4294967296"
-fi
 
 cat >Toolchain-WASI.cmake <<END
 cmake_minimum_required(VERSION 3.4.0)
