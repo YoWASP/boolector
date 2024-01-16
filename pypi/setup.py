@@ -1,3 +1,4 @@
+from setuptools import setup
 from setuptools_scm.git import parse as parse_git, Configuration
 
 
@@ -18,5 +19,6 @@ def get_version():
     return version
 
 
-with open("version.txt", "w") as fp:
-    fp.write(f"__version__ = \"{get_version()}\"")
+setup(
+    version=get_version(),
+)
