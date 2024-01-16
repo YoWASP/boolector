@@ -55,10 +55,18 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: dist-pypi
-    - name: Test iCE40 Python artifact
+        path: dist/
+    - name: Test boolector Python artifact
       run: |
-        pip install pypi/dist/*.whl
+        pip install dist/*.whl
         yowasp-boolector --help
+  check: # group all `test (*)` workflows into one for the required status check
+         # Right now, only Python supported.
+    needs: [test-python]
+    if: always() && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - run: ${{ contains(needs.*.result, 'failure') && 'false' || 'true' }}
   publish-python:
     needs: check
     runs-on: ubuntu-latest
@@ -87,7 +95,7 @@ jobs:
   release:
     needs: check
     runs-on: ubuntu-latest
-    if: "contains(github.event.head_commit.message, 'autorelease') && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop')"
+    if: false  # TODO: Replace with if: "contains(github.event.head_commit.message, 'autorelease') && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop')"
     steps:
       - name: Check out source code
         uses: actions/checkout@v3
