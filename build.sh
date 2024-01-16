@@ -38,8 +38,8 @@ set(CMAKE_CXX_COMPILER ${WASI_SDK_PATH}/bin/clang++)
 set(CMAKE_LINKER ${WASI_SDK_PATH}/bin/wasm-ld CACHE STRING "wasienv build")
 set(CMAKE_AR ${WASI_SDK_PATH}/bin/ar CACHE STRING "wasienv build")
 set(CMAKE_RANLIB ${WASI_SDK_PATH}/bin/ranlib CACHE STRING "wasienv build")
-set(CMAKE_C_COMPILER_LAUNCHER sccache)
-set(CMAKE_CXX_COMPILER_LAUNCHER sccache)
+set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE:-ccache})
+set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE:-ccache})
 
 set(CMAKE_C_COMPILER_TARGET ${WASI_TARGET})
 set(CMAKE_CXX_COMPILER_TARGET ${WASI_TARGET})
@@ -56,7 +56,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 END
 
 mkdir -p $(pwd)/picosat-prefix
-(cd $PICOSAT_DIR && CC="sccache ${WASI_SDK_PATH}/bin/clang" \
+(cd $PICOSAT_DIR && CC="${CCACHE:-ccache} ${WASI_SDK_PATH}/bin/clang" \
     CFLAGS="-DNGETRUSAGE -DNALLSIGNALS" \
     ./configure.sh)
 
