@@ -9,11 +9,10 @@ WASI_SDK_URL=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-
 if ! [ -d ${WASI_SDK} ]; then curl -L ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 
-PICOSAT_DIR=picosat-965
-PICOSAT_URL=http://fmv.jku.at/picosat/picosat-965.tar.gz
+PICOSAT_DIR=$(cat picosat-version)
+PICOSAT_URL=http://fmv.jku.at/picosat/${PICOSAT_DIR}.tar.gz
 if ! [ -d ${PICOSAT_DIR} ]; then curl -L ${PICOSAT_URL} | tar xzf -; fi
 
-# Threading is currently experimental.
 WASI_TARGET="wasm32-wasi"
 WASI_SYSROOT="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot"
 WASI_CFLAGS="-flto"
