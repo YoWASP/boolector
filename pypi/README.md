@@ -1,8 +1,7 @@
 YoWASP Boolector package
-====================
+========================
 
-This package provides a Python interface to the [Boolector][] [WebAssembly][]
-binaries. See the [overview of the YoWASP project][yowasp] for details.
+This package provides a Python interface to the [Boolector][] [WebAssembly][] binaries. See the [overview of the YoWASP project][yowasp] for details.
 
 [boolector]: https://github.com/Boolector/boolector
 [webassembly]: https://webassembly.org/
@@ -35,4 +34,4 @@ See the documentation for [the Python YoWASP runtime](https://github.com/YoWASP/
 License
 -------
 
-This package is covered by the [ISC license](LICENSE.txt), which is the same as the [Yosys license](https://github.com/YosysHQ/yosys/blob/master/COPYING).
+This package is covered by the [MIT license](LICENSE.txt), which is the same as the [Boolector license](https://github.com/Boolector/boolector/blob/master/COPYING).
