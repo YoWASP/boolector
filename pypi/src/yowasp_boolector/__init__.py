@@ -1,10 +1,5 @@
 import sys
 import yowasp_runtime
-try:
-    from importlib import resources as importlib_resources
-    importlib_resources.files
-except (ImportError, AttributeError):
-    import importlib_resources
 
 
 def run_boolector(argv):
