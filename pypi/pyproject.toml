@@ -1,17 +1,18 @@
 [build-system]
-requires = ["setuptools~=67.0", "setuptools-scm>=8.0.4"]
+requires = ["setuptools~=67.0", "setuptools_scm~=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
+dynamic = ["version"]
+
 name = "yowasp-boolector"
 description = "boolector Satisfiability Modulo Theories (SMT) solver"
-authors = [
-    {name = "William D. Jones", email = "thor0505@comcast.net"},
-]
-requires-python = ">=3.8"
 readme = "README.md"
+authors = [{name = "William D. Jones", email = "thor0505@comcast.net"}]
 license = {text = "ISC"}
-dynamic = ["version"]
+classifiers = [
+	"License :: OSI Approved :: ISC License (ISCL)"
+]
 
 dependencies = [
 	"importlib_resources; python_version<'3.9'",
@@ -21,11 +22,10 @@ dependencies = [
 [project.scripts]
 yowasp-boolector = "yowasp_boolector:_run_boolector_argv"
 
-# Dummy section required, otherwise getting a setuptools_scm Configuration
-# will fail.
-[tool.setuptools_scm]
+[project.urls]
+"Homepage" = "https://yowasp.org/"
+"Source Code" = "https://github.com/YoWASP/boolector"
+"Bug Tracker" = "https://github.com/YoWASP/boolector/issues"
 
 [tool.setuptools.package-data]
-yowasp_boolector = [
-	"*.wasm"
-]
+yowasp_boolector = ["*.wasm"]

@@ -1,10 +1,10 @@
 from setuptools import setup
-from setuptools_scm.git import parse as parse_git, Configuration
+from setuptools_scm.git import parse as parse_git
 
 
 def get_version():
-    upstream_git = parse_git("../boolector", config=Configuration.from_file())
-    package_git = parse_git("..", config=Configuration.from_file())
+    upstream_git = parse_git("../boolector")
+    package_git = parse_git("..")
 
     version = f"{upstream_git.tag.major}.{upstream_git.tag.minor}.{upstream_git.tag.micro}"
     if upstream_git.exact: # release
@@ -14,8 +14,9 @@ def get_version():
     version += f".post{package_git.distance}"
     if not upstream_git.exact: # snapshot
         version += f".dev0"
-    if upstream_git.dirty or package_git.dirty:
-        version += f"+dirty"
+    # FIXME: uncomment this once dependencies are no longer patched
+    # if package_git.dirty or upstream_git.dirty:
+    #     version += f"+dirty"
     return version
 
 
