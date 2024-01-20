@@ -51,7 +51,7 @@ END
 
 mkdir -p $(pwd)/picosat-prefix
 (cd $PICOSAT_DIR && CC="${CCACHE:-ccache} ${WASI_SDK_PATH}/bin/clang" \
-    CFLAGS="-DNGETRUSAGE -DNALLSIGNALS" \
+    CFLAGS="-DNGETRUSAGE -DNALLSIGNALS -DNDEBUG -O3" \
     ./configure.sh)
 
 make -C $PICOSAT_DIR picosat.o version.o
