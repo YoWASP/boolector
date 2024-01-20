@@ -1,0 +1,38 @@
+{
+    "name": "@yowasp/boolector",
+    "version": "__VERSION__",
+    "description": "boolector Satisfiability Modulo Theories (SMT) solver",
+    "author": "Catherine <whitequark@whitequark.org>",
+    "license": "ISC",
+    "homepage": "https://yowasp.org/",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/YoWASP/boolector.git"
+    },
+    "bugs": {
+        "url": "https://github.com/YoWASP/boolector/issues"
+    },
+    "type": "module",
+    "files": [
+        "lib/api.d.ts",
+        "gen/bundle.js",
+        "gen/resources-*.js",
+        "gen/*.wasm"
+    ],
+    "exports": {
+        "types": "./lib/api.d.ts",
+        "default": "./gen/bundle.js"
+    },
+    "types": "./lib/api.d.ts",
+    "devDependencies": {
+        "@bytecodealliance/jco": "0.14.2",
+        "@yowasp/runtime": "7.0.36",
+        "esbuild": "^0.19.8"
+    },
+    "scripts": {
+        "transpile": "jco new ../boolector-build/bin/boolector.wasm --wasi-command --output boolector.wasm && jco transpile boolector.wasm --instantiation async --no-typescript --no-namespaced-exports --map 'wasi:io/*=runtime#io' --map 'wasi:cli/*=runtime#cli' --map 'wasi:clocks/*=runtime#*' --map 'wasi:filesystem/*=runtime#fs' --map 'wasi:random/*=runtime#random' --out-dir gen/",
+        "pack": "yowasp-pack-resources gen/resources-boolector.js gen",
+        "build": "esbuild --bundle lib/api.js --outfile=gen/bundle.js --format=esm --platform=node --external:./resources-*.js",
+        "all": "npm run transpile && npm run pack && npm run build"
+    }
+}

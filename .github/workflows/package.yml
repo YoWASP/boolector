@@ -40,6 +40,14 @@ jobs:
         with:
           name: dist-pypi
           path: pypi/dist/
+      - name: Build JavaScript artifact
+        run: |
+          ./package-npmjs.sh
+      - name: Upload JavaScript artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-npmjs
+          path: npmjs/dist/
       - name: Print ccache statistics
         run: |
           ccache -s
@@ -60,9 +68,31 @@ jobs:
       run: |
         pip install dist/*.whl
         yowasp-boolector --help
+  test-javascript:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          - 'v18.x'
+          - 'v20.x'
+    steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '${{ matrix.node-version }}'
+    - name: Download JavaScript artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-npmjs
+        path: dist/
+    - name: Test JavaScript artifact
+      run: |
+        npm install ./dist/*.tgz
+        node -e 'import("@yowasp/boolector").then(pkg => pkg.runBoolector(["--help"]))'
   check: # group all `test (*)` workflows into one for the required status check
          # Right now, only Python supported.
-    needs: [test-python]
+    needs: [test-python, test-javascript]
     if: ${{ always() && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     steps:
@@ -92,6 +122,32 @@ jobs:
     - name: Publish wheels to PyPI
       if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/release') }}
       uses: pypa/gh-action-pypi-publish@release/v1
+  publish-javascript:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: publish
+    permissions:
+      id-token: write
+    if: ${{ !contains(github.event.head_commit.message, 'skip js') }}
+    steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        registry-url: 'https://registry.npmjs.org'
+    - name: Download JavaScript artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-npmjs
+        path: dist/
+    - name: Publish package to NPM (dry run)
+      if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop') }}
+      run: npm publish --access public $(find dist -name *.tgz -printf 'file:%p ') --dry-run
+    - name: Publish package to NPM
+      if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/release') }}
+      run: npm publish --access public $(find dist -name *.tgz -printf 'file:%p ')
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        NPM_CONFIG_PROVENANCE: true
   release:
     needs: check
     runs-on: ubuntu-latest
