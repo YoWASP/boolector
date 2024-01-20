@@ -1,6 +1,6 @@
 [submodule "boolector"]
-	path = boolector
+	path = boolector-src
 	url = https://github.com/Boolector/boolector.git
 [submodule "btor2tools"]
-	path = btor2tools
+	path = btor2tools-src
 	url = https://github.com/Boolector/btor2tools.git

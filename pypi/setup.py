@@ -3,7 +3,7 @@ from setuptools_scm.git import parse as parse_git
 
 
 def get_version():
-    upstream_git = parse_git("../boolector")
+    upstream_git = parse_git("../boolector-src")
     package_git = parse_git("..")
 
     version = f"{upstream_git.tag.major}.{upstream_git.tag.minor}.{upstream_git.tag.micro}"

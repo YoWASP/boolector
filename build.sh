@@ -59,16 +59,16 @@ ${WASI_SDK_PATH}/bin/ar rc $PICOSAT_DIR/libpicosat.a $PICOSAT_DIR/picosat.o $PIC
 ${WASI_SDK_PATH}/bin/ranlib $PICOSAT_DIR/libpicosat.a
 cp $PICOSAT_DIR/libpicosat.a $PICOSAT_DIR/picosat.h $(pwd)/picosat-prefix
 
-(cd ./btor2tools && git apply < ../btor2tools.patch || git apply --reverse --check < ../btor2tools.patch)
-cmake -B btor2tools-build -S btor2tools \
+(cd btor2tools-src && git apply < ../btor2tools.patch || git apply --reverse --check < ../btor2tools.patch)
+cmake -B btor2tools-build -S btor2tools-src \
   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
   -DBUILD_SHARED_LIBS=OFF \
   -DBUILD_TOOLS=OFF \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/btor2tools-prefix
 make -C btor2tools-build install
 
-(cd ./boolector && git apply < ../boolector.patch || git apply --reverse --check < ../boolector.patch)
-cmake -B boolector-build -S boolector \
+(cd boolector-src && git apply < ../boolector.patch || git apply --reverse --check < ../boolector.patch)
+cmake -B boolector-build -S boolector-src \
     -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
     -DCMAKE_INCLUDE_PATH="$(pwd)/btor2tools-prefix/include;$(pwd)/picosat-prefix" \
     -DCMAKE_LIBRARY_PATH="$(pwd)/btor2tools-prefix/lib;$(pwd)/picosat-prefix"
