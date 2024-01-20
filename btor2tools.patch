@@ -1,42 +1,68 @@
-diff --git a/src/btorsim/btorsim.cpp b/src/btorsim/btorsim.cpp
-index 200bc46..2ba4d86 100644
---- a/src/btorsim/btorsim.cpp
-+++ b/src/btorsim/btorsim.cpp
-@@ -2036,3 +2036,16 @@ main (int32_t argc, char const *argv[])
-     if (next_state[i].type) next_state[i].remove ();
-   return 0;
- }
-+
-+#if defined(__wasm)
-+extern "C" {
-+	// FIXME: WASI does not currently support exceptions.
-+	void* __cxa_allocate_exception(size_t thrown_size) throw() {
-+		return malloc(thrown_size);
-+	}
-+	bool __cxa_uncaught_exception() throw();
-+	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
-+		std::terminate();
-+	}
-+}
-+#endif
-diff --git a/src/btorsplit.cpp b/src/btorsplit.cpp
-index a514003..7fbb86e 100644
---- a/src/btorsplit.cpp
-+++ b/src/btorsplit.cpp
-@@ -175,3 +175,16 @@ main(int argc, char *argv[])
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3046fb2..2f6c9ab 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -14,6 +14,7 @@ include(GNUInstallDirs)
  
-   return EXIT_SUCCESS;
- }
+ option(ASAN              "Compile with ASAN support" OFF)
+ option(BUILD_BTOR2AIGER  "Build btor2aiger binary" OFF)
++option(BUILD_TOOLS       "Build btorsim, catbtor, btorsplit binaries" OFF)
+ option(CHECK             "Enable assertions for optimized builds" OFF)
+ option(BUILD_SHARED_LIBS "Build as shared library" ON)
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 213d897..325e534 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -10,23 +10,28 @@ install(
+   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ )
+ 
+-add_executable(btorsim
+-  btorsim/btorsimam.cpp
+-  btorsim/btorsimstate.cpp
+-  btorsim/btorsimvcd.cpp
+-  btorsim/btorsimhelpers.cpp
+-  btorsim/btorsim.cpp
+-  btorsim/btorsimbv.c
+-  btorsim/btorsimrng.c
+-)
+-target_include_directories(btorsim PRIVATE .)
+-target_link_libraries(btorsim btor2parser)
+-target_compile_options(btorsim PRIVATE -Wall -Wfatal-errors)
+-install(TARGETS btorsim DESTINATION ${CMAKE_INSTALL_BINDIR})
++if (BUILD_TOOLS)
++  add_executable(btorsim
++    btorsim/btorsimam.cpp
++    btorsim/btorsimstate.cpp
++    btorsim/btorsimvcd.cpp
++    btorsim/btorsimhelpers.cpp
++    btorsim/btorsim.cpp
++    btorsim/btorsimbv.c
++    btorsim/btorsimrng.c
++  )
++  target_include_directories(btorsim PRIVATE .)
++  target_link_libraries(btorsim btor2parser)
++  target_compile_options(btorsim PRIVATE -Wall -Wfatal-errors)
++  install(TARGETS btorsim DESTINATION ${CMAKE_INSTALL_BINDIR})
+ 
+-add_executable(catbtor catbtor.c)
+-target_link_libraries(catbtor btor2parser)
+-install(TARGETS catbtor DESTINATION ${CMAKE_INSTALL_BINDIR})
++  add_executable(catbtor catbtor.c)
++  target_link_libraries(catbtor btor2parser)
++  install(TARGETS catbtor DESTINATION ${CMAKE_INSTALL_BINDIR})
 +
-+#if defined(__wasm)
-+extern "C" {
-+	// FIXME: WASI does not currently support exceptions.
-+	void* __cxa_allocate_exception(size_t thrown_size) throw() {
-+		return malloc(thrown_size);
-+	}
-+	bool __cxa_uncaught_exception() throw();
-+	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
-+		std::terminate();
-+	}
-+}
-+#endif
++  add_executable(btorsplit btorsplit.cpp)
++  install(TARGETS btorsplit DESTINATION ${CMAKE_INSTALL_BINDIR})
++endif()
+ 
+ if(BUILD_BTOR2AIGER)
+   add_executable(btor2aiger
+@@ -38,6 +43,3 @@ if(BUILD_BTOR2AIGER)
+   target_link_libraries(btor2aiger btor2parser Boolector::boolector)
+   install(TARGETS btor2aiger DESTINATION ${CMAKE_INSTALL_BINDIR})
+ endif()
+-
+-add_executable(btorsplit btorsplit.cpp)
+-install(TARGETS btorsplit DESTINATION ${CMAKE_INSTALL_BINDIR})
