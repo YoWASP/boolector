@@ -2,7 +2,7 @@ on: [push, pull_request]
 name: Build & publish
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
@@ -63,7 +63,7 @@ jobs:
   check: # group all `test (*)` workflows into one for the required status check
          # Right now, only Python supported.
     needs: [test-python]
-    if: always() && !contains(needs.*.result, 'cancelled')
+    if: ${{ always() && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     steps:
       - run: ${{ contains(needs.*.result, 'failure') && 'false' || 'true' }}
@@ -73,7 +73,7 @@ jobs:
     environment: publish
     permissions:
       id-token: write
-    if: false  # TODO: Replace with if: "!contains(github.event.head_commit.message, 'skip py')" when ready
+    if: ${{ !contains(github.event.head_commit.message, 'skip py') }}
     steps:
     - name: Download Python artifacts
       uses: actions/download-artifact@v3
@@ -85,17 +85,17 @@ jobs:
         mkdir dist
         find dist-tree -name '*.whl' -exec mv {} dist/ \;
     - name: Publish wheels to Test PyPI
-      if: "github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop')"
+      if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop') }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
     - name: Publish wheels to PyPI
-      if: "github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/release')"
+      if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/release') }}
       uses: pypa/gh-action-pypi-publish@release/v1
   release:
     needs: check
     runs-on: ubuntu-latest
-    if: false  # TODO: Replace with if: "contains(github.event.head_commit.message, 'autorelease') && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop')"
+    if: ${{ contains(github.event.head_commit.message, 'autorelease') && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/develop') }}
     steps:
       - name: Check out source code
         uses: actions/checkout@v3
