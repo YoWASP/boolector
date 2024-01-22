@@ -1,7 +1,6 @@
 /wasi-sdk-*
 *.wasm
-/picosat-*
+/zlib-*
 /*-build
 /*-prefix
 /Toolchain-WASI.cmake
-!/picosat-version

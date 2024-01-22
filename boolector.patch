@@ -1,3 +1,19 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index b51e10a1..ecdf83ac 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -131,8 +131,9 @@ if(PicoSAT_FOUND)
+ endif()
+ 
+ if(MiniSat_FOUND)
+-  target_include_directories(boolector PRIVATE ${MiniSat_INCLUDE_DIR})
+-  target_link_libraries(boolector ${MiniSat_LIBRARIES})
++  find_package(ZLIB)
++  target_include_directories(boolector PRIVATE ${MiniSat_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
++  target_link_libraries(boolector ${MiniSat_LIBRARIES} ${ZLIB_LIBRARY})
+ endif()
+ 
+ install(TARGETS boolector
 diff --git a/src/boolector.c b/src/boolector.c
 index 2df5bbe6..06c75490 100644
 --- a/src/boolector.c
@@ -87,3 +103,35 @@ index 64308a4f..12c911a3 100644
      BTOR_DELETEN (btor->mm, cmd, len);
    }
    else
+diff --git a/src/sat/btorminisat.cc b/src/sat/btorminisat.cc
+index e37ee585..bc08d612 100644
+--- a/src/sat/btorminisat.cc
++++ b/src/sat/btorminisat.cc
+@@ -16,6 +16,10 @@
+ #define __STDC_FORMAT_MACROS
+ #endif
+ 
++#if defined(__wasm)
++#include <typeinfo>
++#endif
++
+ #include "minisat/simp/SimpSolver.h"
+ 
+ #include <cassert>
+@@ -257,3 +261,16 @@ btor_sat_enable_minisat (BtorSATMgr* smgr)
+ }
+ };
+ #endif
++
++#if defined(__wasm)
++extern "C" {
++	// FIXME: WASI does not currently support exceptions.
++	void* __cxa_allocate_exception(size_t thrown_size) throw() {
++		return malloc(thrown_size);
++	}
++	bool __cxa_uncaught_exception() throw();
++	void __cxa_throw(void* thrown_exception, struct std::type_info * tinfo, void (*dest)(void*)) {
++		std::terminate();
++	}
++}
++#endif

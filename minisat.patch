@@ -1,0 +1,138 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 207e072..0070cb2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,7 @@ cmake_policy(SET CMP0042 NEW)
+ 
+ option(STATIC_BINARIES "Link binaries statically." ON)
+ option(USE_SORELEASE   "Use SORELEASE in shared library filename." ON)
++option(LIBRARY_ONLY "Build only minisat library" OFF)
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Library version:
+@@ -35,6 +36,10 @@ include_directories(${minisat_SOURCE_DIR})
+ 
+ add_definitions(-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
+ 
++if(WASI)
++  add_definitions(-D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL)
++endif()
++
+ #--------------------------------------------------------------------------------------------------
+ # Build Targets:
+ 
+@@ -45,38 +50,71 @@ set(MINISAT_LIB_SOURCES
+     minisat/simp/SimpSolver.cc)
+ 
+ add_library(minisat-lib-static STATIC ${MINISAT_LIB_SOURCES})
+-add_library(minisat-lib-shared SHARED ${MINISAT_LIB_SOURCES})
++if(NOT WASI)
++  add_library(minisat-lib-shared SHARED ${MINISAT_LIB_SOURCES})
++endif()
+ 
+-target_link_libraries(minisat-lib-shared ${ZLIB_LIBRARY})
++if(NOT WASI)
++  target_link_libraries(minisat-lib-shared ${ZLIB_LIBRARY})
++endif()
+ target_link_libraries(minisat-lib-static ${ZLIB_LIBRARY})
+ 
+-add_executable(minisat_core minisat/core/Main.cc)
+-add_executable(minisat_simp minisat/simp/Main.cc)
+-
+-if(STATIC_BINARIES)
+-  target_link_libraries(minisat_core minisat-lib-static)
+-  target_link_libraries(minisat_simp minisat-lib-static)
+-else()
+-  target_link_libraries(minisat_core minisat-lib-shared)
+-  target_link_libraries(minisat_simp minisat-lib-shared)
++if(NOT LIBRARY_ONLY)
++  add_executable(minisat_core minisat/core/Main.cc)
++  add_executable(minisat_simp minisat/simp/Main.cc)
++
++  if(STATIC_BINARIES)
++    target_link_libraries(minisat_core minisat-lib-static)
++    target_link_libraries(minisat_simp minisat-lib-static)
++  else()
++    if(NOT WASI)
++      target_link_libraries(minisat_core minisat-lib-shared)
++      target_link_libraries(minisat_simp minisat-lib-shared)
++    endif()
++  endif()
+ endif()
+ 
+ set_target_properties(minisat-lib-static PROPERTIES OUTPUT_NAME "minisat")
+-set_target_properties(minisat-lib-shared
+-  PROPERTIES
+-    OUTPUT_NAME "minisat" 
+-    VERSION ${MINISAT_VERSION}
+-    SOVERSION ${MINISAT_SOVERSION})
++if(NOT WASI)
++  set_target_properties(minisat-lib-shared
++    PROPERTIES
++      OUTPUT_NAME "minisat" 
++      VERSION ${MINISAT_VERSION}
++      SOVERSION ${MINISAT_SOVERSION})
++endif()
+ 
+-set_target_properties(minisat_simp       PROPERTIES OUTPUT_NAME "minisat")
++if(NOT LIBRARY_ONLY)
++  set_target_properties(minisat_simp       PROPERTIES OUTPUT_NAME "minisat")
++endif()
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Installation targets:
+ 
+-install(TARGETS minisat-lib-static minisat-lib-shared minisat_core minisat_simp 
+-        RUNTIME DESTINATION bin
+-        LIBRARY DESTINATION lib
+-        ARCHIVE DESTINATION lib)
++if(NOT LIBRARY_ONLY)
++  if(WASI)
++    install(TARGETS minisat-lib-static minisat_core minisat_simp 
++            RUNTIME DESTINATION bin
++            LIBRARY DESTINATION lib
++            ARCHIVE DESTINATION lib)
++  else()
++    install(TARGETS minisat-lib-static minisat-lib-shared minisat_core minisat_simp 
++            RUNTIME DESTINATION bin
++            LIBRARY DESTINATION lib
++            ARCHIVE DESTINATION lib)
++  endif()
++else()
++  if(WASI)
++  install(TARGETS minisat-lib-static
++          RUNTIME DESTINATION bin
++          LIBRARY DESTINATION lib
++          ARCHIVE DESTINATION lib)
++  else()
++    install(TARGETS minisat-lib-static minisat-lib-shared
++            RUNTIME DESTINATION bin
++            LIBRARY DESTINATION lib
++            ARCHIVE DESTINATION lib)
++  endif()
++endif()
+ 
+ install(DIRECTORY minisat/mtl minisat/utils minisat/core minisat/simp
+         DESTINATION include/minisat
+diff --git a/minisat/utils/System.cc b/minisat/utils/System.cc
+index 981d30e..49c1cb6 100644
+--- a/minisat/utils/System.cc
++++ b/minisat/utils/System.cc
+@@ -106,7 +106,7 @@ void Minisat::setX86FPUPrecision()
+ }
+ 
+ 
+-#if !defined(_MSC_VER) && !defined(__MINGW32__)
++#if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__wasm)
+ void Minisat::limitMemory(uint64_t max_mem_mb)
+ {
+ // FIXME: OpenBSD does not support RLIMIT_AS. Not sure how well RLIMIT_DATA works instead.
+@@ -138,7 +138,7 @@ void Minisat::limitMemory(uint64_t /*max_mem_mb*/)
+ #endif
+ 
+ 
+-#if !defined(_MSC_VER) && !defined(__MINGW32__)
++#if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__wasm)
+ void Minisat::limitTime(uint32_t max_cpu_time)
+ {
+     if (max_cpu_time != 0){
