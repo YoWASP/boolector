@@ -1,16 +1,27 @@
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index b51e10a1..ecdf83ac 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -131,8 +131,9 @@ if(PicoSAT_FOUND)
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 532c08e3..bd003e6a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -394,6 +394,8 @@ if(MiniSat_FOUND)
+     message(FATAL_ERROR "MiniSAT headers not found")
+   else()
+     add_definitions("-DBTOR_USE_MINISAT")
++    # Disable gzip dependency for new enough MiniSAT.
++    add_definitions("-DMINISAT_LIBRARY_ONLY")
+   endif()
  endif()
  
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index b51e10a1..09b696d2 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -133,6 +133,9 @@ endif()
  if(MiniSat_FOUND)
--  target_include_directories(boolector PRIVATE ${MiniSat_INCLUDE_DIR})
--  target_link_libraries(boolector ${MiniSat_LIBRARIES})
-+  find_package(ZLIB)
-+  target_include_directories(boolector PRIVATE ${MiniSat_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
-+  target_link_libraries(boolector ${MiniSat_LIBRARIES} ${ZLIB_LIBRARY})
+   target_include_directories(boolector PRIVATE ${MiniSat_INCLUDE_DIR})
+   target_link_libraries(boolector ${MiniSat_LIBRARIES})
++  if(WASI)
++    target_link_libraries(boolector wasi-emulated-process-clocks wasi-emulated-signal)
++  endif()
  endif()
  
  install(TARGETS boolector

@@ -9,10 +9,6 @@ WASI_SDK_URL=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-
 if ! [ -d ${WASI_SDK} ]; then curl -L ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 
-ZLIB=zlib-1.3
-ZLIB_URL=https://github.com/madler/zlib/releases/download/v1.3/zlib-1.3.tar.gz
-if ! [ -d ${ZLIB} ]; then curl -L ${ZLIB_URL} | tar xzf -; fi
-
 WASI_TARGET="wasm32-wasi"
 WASI_SYSROOT="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot"
 WASI_CFLAGS="-flto"
@@ -49,18 +45,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 END
 
-cmake -B zlib-build -S ${ZLIB} \
-  -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
-  -DCMAKE_INSTALL_PREFIX=$(pwd)/zlib-prefix
-make -C zlib-build install
-
 (cd minisat-src && git apply < ../minisat.patch || git apply --reverse --check < ../minisat.patch)
 cmake -B minisat-build -S minisat-src \
   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
-  -DSTATIC_BINARIES=ON \
   -DLIBRARY_ONLY=ON \
-  -DCMAKE_INCLUDE_PATH="$(pwd)/zlib-prefix/include" \
-  -DCMAKE_LIBRARY_PATH="$(pwd)/zlib-prefix/lib" \
   -DCMAKE_BUILD_TYPE="Release" \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/minisat-prefix
 make -C minisat-build install
@@ -76,6 +64,6 @@ make -C btor2tools-build install
 (cd boolector-src && git apply < ../boolector.patch || git apply --reverse --check < ../boolector.patch)
 cmake -B boolector-build -S boolector-src \
     -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
-    -DCMAKE_INCLUDE_PATH="$(pwd)/btor2tools-prefix/include;$(pwd)/minisat-prefix/include;$(pwd)/zlib-prefix/include" \
-    -DCMAKE_LIBRARY_PATH="$(pwd)/btor2tools-prefix/lib;$(pwd)/minisat-prefix/lib;$(pwd)/zlib-prefix/lib"
+    -DCMAKE_INCLUDE_PATH="$(pwd)/btor2tools-prefix/include;$(pwd)/minisat-prefix/include" \
+    -DCMAKE_LIBRARY_PATH="$(pwd)/btor2tools-prefix/lib;$(pwd)/minisat-prefix/lib"
 cmake --build boolector-build -v -t boolector-bin
