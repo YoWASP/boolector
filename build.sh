@@ -53,7 +53,6 @@ cmake -B minisat-build -S minisat-src \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/minisat-prefix
 make -C minisat-build install
 
-(cd btor2tools-src && git apply < ../btor2tools.patch || git apply --reverse --check < ../btor2tools.patch)
 cmake -B btor2tools-build -S btor2tools-src \
   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
   -DBUILD_SHARED_LIBS=OFF \
