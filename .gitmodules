@@ -4,3 +4,6 @@
 [submodule "btor2tools"]
 	path = btor2tools-src
 	url = https://github.com/Boolector/btor2tools.git
+[submodule "minisat-src"]
+	path = minisat-src
+	url = https://github.com/agurfinkel/minisat

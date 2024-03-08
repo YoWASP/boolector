@@ -1,0 +1,268 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 207e072..43aa403 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,7 @@ cmake_policy(SET CMP0042 NEW)
+ 
+ option(STATIC_BINARIES "Link binaries statically." ON)
+ option(USE_SORELEASE   "Use SORELEASE in shared library filename." ON)
++option(LIBRARY_ONLY "Build only minisat library (ZLIB not needed- dependents require -DMINISAT_LIBRARY_ONLY)" OFF)
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Library version:
+@@ -26,8 +27,13 @@ set(MINISAT_SOVERSION ${MINISAT_SOMAJOR})
+ #--------------------------------------------------------------------------------------------------
+ # Dependencies:
+ 
+-find_package(ZLIB)
+-include_directories(${ZLIB_INCLUDE_DIR})
++if(LIBRARY_ONLY)
++  add_definitions(-DMINISAT_LIBRARY_ONLY)
++else()
++  find_package(ZLIB)
++  include_directories(${ZLIB_INCLUDE_DIR})
++endif()
++
+ include_directories(${minisat_SOURCE_DIR})
+ 
+ #--------------------------------------------------------------------------------------------------
+@@ -35,6 +41,10 @@ include_directories(${minisat_SOURCE_DIR})
+ 
+ add_definitions(-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS)
+ 
++if(WASI)
++  add_definitions(-D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_SIGNAL)
++endif()
++
+ #--------------------------------------------------------------------------------------------------
+ # Build Targets:
+ 
+@@ -45,39 +55,67 @@ set(MINISAT_LIB_SOURCES
+     minisat/simp/SimpSolver.cc)
+ 
+ add_library(minisat-lib-static STATIC ${MINISAT_LIB_SOURCES})
+-add_library(minisat-lib-shared SHARED ${MINISAT_LIB_SOURCES})
++if(NOT WASI)
++  add_library(minisat-lib-shared SHARED ${MINISAT_LIB_SOURCES})
++endif()
+ 
+-target_link_libraries(minisat-lib-shared ${ZLIB_LIBRARY})
++if(NOT WASI)
++  target_link_libraries(minisat-lib-shared ${ZLIB_LIBRARY})
++endif()
+ target_link_libraries(minisat-lib-static ${ZLIB_LIBRARY})
+ 
+-add_executable(minisat_core minisat/core/Main.cc)
+-add_executable(minisat_simp minisat/simp/Main.cc)
+-
+-if(STATIC_BINARIES)
+-  target_link_libraries(minisat_core minisat-lib-static)
+-  target_link_libraries(minisat_simp minisat-lib-static)
+-else()
+-  target_link_libraries(minisat_core minisat-lib-shared)
+-  target_link_libraries(minisat_simp minisat-lib-shared)
++if(NOT LIBRARY_ONLY)
++  if(WASI)
++    message(FATAL_ERROR "WASI build of MiniSAT does not support binaries yet.")
++  endif()
++
++  add_executable(minisat_core minisat/core/Main.cc)
++  add_executable(minisat_simp minisat/simp/Main.cc)
++
++  if(STATIC_BINARIES)
++    target_link_libraries(minisat_core minisat-lib-static)
++    target_link_libraries(minisat_simp minisat-lib-static)
++  else()
++    target_link_libraries(minisat_core minisat-lib-shared)
++    target_link_libraries(minisat_simp minisat-lib-shared)
++  endif()
+ endif()
+ 
+ set_target_properties(minisat-lib-static PROPERTIES OUTPUT_NAME "minisat")
+-set_target_properties(minisat-lib-shared
+-  PROPERTIES
+-    OUTPUT_NAME "minisat" 
+-    VERSION ${MINISAT_VERSION}
+-    SOVERSION ${MINISAT_SOVERSION})
++if(NOT WASI)
++  set_target_properties(minisat-lib-shared
++    PROPERTIES
++      OUTPUT_NAME "minisat"
++      VERSION ${MINISAT_VERSION}
++      SOVERSION ${MINISAT_SOVERSION})
++endif()
+ 
+-set_target_properties(minisat_simp       PROPERTIES OUTPUT_NAME "minisat")
++if(NOT LIBRARY_ONLY)
++  set_target_properties(minisat_simp       PROPERTIES OUTPUT_NAME "minisat")
++endif()
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Installation targets:
+ 
+-install(TARGETS minisat-lib-static minisat-lib-shared minisat_core minisat_simp 
++install(TARGETS minisat-lib-static
+         RUNTIME DESTINATION bin
+         LIBRARY DESTINATION lib
+         ARCHIVE DESTINATION lib)
+ 
++if(NOT WASI)
++  install(TARGETS minisat-lib-shared
++          RUNTIME DESTINATION bin
++          LIBRARY DESTINATION lib
++          ARCHIVE DESTINATION lib)
++endif()
++
++if(NOT LIBRARY_ONLY)
++  install(TARGETS minisat_core minisat_simp
++          RUNTIME DESTINATION bin
++          LIBRARY DESTINATION lib
++          ARCHIVE DESTINATION lib)
++endif()
++
+ install(DIRECTORY minisat/mtl minisat/utils minisat/core minisat/simp
+         DESTINATION include/minisat
+         FILES_MATCHING PATTERN "*.h")
+diff --git a/minisat/core/Main.cc b/minisat/core/Main.cc
+index 69302ae..c4c1c17 100644
+--- a/minisat/core/Main.cc
++++ b/minisat/core/Main.cc
+@@ -18,6 +18,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ **************************************************************************************************/
+ 
++#ifdef MINISAT_LIBRARY_ONLY
++    #error MiniSAT binaries are unavailable when MINISAT_LIBRARY_ONLY is defined
++#endif
++
+ #include <errno.h>
+ #include <zlib.h>
+ 
+diff --git a/minisat/simp/Main.cc b/minisat/simp/Main.cc
+index 87dea1b..5e8d5f5 100644
+--- a/minisat/simp/Main.cc
++++ b/minisat/simp/Main.cc
+@@ -18,6 +18,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ **************************************************************************************************/
+ 
++#ifdef MINISAT_LIBRARY_ONLY
++    #error MiniSAT binaries are unavailable when MINISAT_LIBRARY_ONLY is defined
++#endif
++
+ #include <errno.h>
+ #include <zlib.h>
+ 
+diff --git a/minisat/utils/ParseUtils.h b/minisat/utils/ParseUtils.h
+index f31fb9e..443d966 100644
+--- a/minisat/utils/ParseUtils.h
++++ b/minisat/utils/ParseUtils.h
+@@ -24,7 +24,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
+-#include <zlib.h>
++#ifndef MINISAT_LIBRARY_ONLY
++    #include <zlib.h>
++#endif
+ 
+ #include "minisat/mtl/XAlloc.h"
+ 
+@@ -34,38 +36,40 @@ namespace Minisat {
+ // A simple buffered character stream class:
+ 
+ 
++#ifndef MINISAT_LIBRARY_ONLY
++    class StreamBuffer {
++        gzFile         in;
++        unsigned char* buf;
++        int            pos;
++        int            size;
+ 
+-class StreamBuffer {
+-    gzFile         in;
+-    unsigned char* buf;
+-    int            pos;
+-    int            size;
+-
+-    enum { buffer_size = 64*1024 };
++        enum { buffer_size = 64*1024 };
+ 
+-    void assureLookahead() {
+-        if (pos >= size) {
+-            pos  = 0;
+-            size = gzread(in, buf, buffer_size); } }
++        void assureLookahead() {
++            if (pos >= size) {
++                pos  = 0;
++                size = gzread(in, buf, buffer_size); } }
+ 
+-public:
+-    explicit StreamBuffer(gzFile i) : in(i), pos(0), size(0){
+-        buf = (unsigned char*)xrealloc(NULL, buffer_size);
+-        assureLookahead();
+-    }
+-    ~StreamBuffer() { free(buf); }
++    public:
++        explicit StreamBuffer(gzFile i) : in(i), pos(0), size(0){
++            buf = (unsigned char*)xrealloc(NULL, buffer_size);
++            assureLookahead();
++        }
++        ~StreamBuffer() { free(buf); }
+ 
+-    int  operator *  () const { return (pos >= size) ? EOF : buf[pos]; }
+-    void operator ++ ()       { pos++; assureLookahead(); }
+-    int  position    () const { return pos; }
+-};
++        int  operator *  () const { return (pos >= size) ? EOF : buf[pos]; }
++        void operator ++ ()       { pos++; assureLookahead(); }
++        int  position    () const { return pos; }
++    };
+ 
+ 
+ //-------------------------------------------------------------------------------------------------
+ // End-of-file detection functions for StreamBuffer and char*:
+ 
+ 
+-static inline bool isEof(StreamBuffer& in) { return *in == EOF;  }
++    static inline bool isEof(StreamBuffer& in) { return *in == EOF;  }
++#endif
++
+ static inline bool isEof(const char*   in) { return *in == '\0'; }
+ 
+ //-------------------------------------------------------------------------------------------------
+diff --git a/minisat/utils/System.cc b/minisat/utils/System.cc
+index 981d30e..49c1cb6 100644
+--- a/minisat/utils/System.cc
++++ b/minisat/utils/System.cc
+@@ -106,7 +106,7 @@ void Minisat::setX86FPUPrecision()
+ }
+ 
+ 
+-#if !defined(_MSC_VER) && !defined(__MINGW32__)
++#if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__wasm)
+ void Minisat::limitMemory(uint64_t max_mem_mb)
+ {
+ // FIXME: OpenBSD does not support RLIMIT_AS. Not sure how well RLIMIT_DATA works instead.
+@@ -138,7 +138,7 @@ void Minisat::limitMemory(uint64_t /*max_mem_mb*/)
+ #endif
+ 
+ 
+-#if !defined(_MSC_VER) && !defined(__MINGW32__)
++#if !defined(_MSC_VER) && !defined(__MINGW32__) && !defined(__wasm)
+ void Minisat::limitTime(uint32_t max_cpu_time)
+ {
+     if (max_cpu_time != 0){
+diff --git a/minisat/utils/System.h b/minisat/utils/System.h
+index a51d4c2..974ee9f 100644
+--- a/minisat/utils/System.h
++++ b/minisat/utils/System.h
+@@ -52,7 +52,7 @@ extern void   sigTerm(void handler(int));      // Set up handling of available t
+ //-------------------------------------------------------------------------------------------------
+ // Implementation of inline functions:
+ 
+-#if defined(_MSC_VER) || defined(__MINGW32__)
++#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__wasm)
+ #include <time.h>
+ 
+ static inline double Minisat::cpuTime(void) { return (double)clock() / CLOCKS_PER_SEC; }

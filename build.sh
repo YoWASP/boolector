@@ -9,10 +9,6 @@ WASI_SDK_URL=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-
 if ! [ -d ${WASI_SDK} ]; then curl -L ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 
-PICOSAT_DIR=$(cat picosat-version)
-PICOSAT_URL=http://fmv.jku.at/picosat/${PICOSAT_DIR}.tar.gz
-if ! [ -d ${PICOSAT_DIR} ]; then curl -L ${PICOSAT_URL} | tar xzf -; fi
-
 WASI_TARGET="wasm32-wasi"
 WASI_SYSROOT="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot"
 WASI_CFLAGS="-flto"
@@ -49,17 +45,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 END
 
-mkdir -p $(pwd)/picosat-prefix
-(cd $PICOSAT_DIR && CC="${CCACHE:-ccache} ${WASI_SDK_PATH}/bin/clang" \
-    CFLAGS="-DNGETRUSAGE -DNALLSIGNALS -DNDEBUG -O3" \
-    ./configure.sh)
+(cd minisat-src && git apply < ../minisat.patch || git apply --reverse --check < ../minisat.patch)
+cmake -B minisat-build -S minisat-src \
+  -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
+  -DLIBRARY_ONLY=ON \
+  -DCMAKE_BUILD_TYPE="Release" \
+  -DCMAKE_INSTALL_PREFIX=$(pwd)/minisat-prefix
+make -C minisat-build install
 
-make -C $PICOSAT_DIR picosat.o version.o
-${WASI_SDK_PATH}/bin/ar rc $PICOSAT_DIR/libpicosat.a $PICOSAT_DIR/picosat.o $PICOSAT_DIR/version.o
-${WASI_SDK_PATH}/bin/ranlib $PICOSAT_DIR/libpicosat.a
-cp $PICOSAT_DIR/libpicosat.a $PICOSAT_DIR/picosat.h $(pwd)/picosat-prefix
-
-(cd btor2tools-src && git apply < ../btor2tools.patch || git apply --reverse --check < ../btor2tools.patch)
 cmake -B btor2tools-build -S btor2tools-src \
   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
   -DBUILD_SHARED_LIBS=OFF \
@@ -70,6 +63,6 @@ make -C btor2tools-build install
 (cd boolector-src && git apply < ../boolector.patch || git apply --reverse --check < ../boolector.patch)
 cmake -B boolector-build -S boolector-src \
     -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
-    -DCMAKE_INCLUDE_PATH="$(pwd)/btor2tools-prefix/include;$(pwd)/picosat-prefix" \
-    -DCMAKE_LIBRARY_PATH="$(pwd)/btor2tools-prefix/lib;$(pwd)/picosat-prefix"
-cmake --build boolector-build -t boolector-bin
+    -DCMAKE_INCLUDE_PATH="$(pwd)/btor2tools-prefix/include;$(pwd)/minisat-prefix/include" \
+    -DCMAKE_LIBRARY_PATH="$(pwd)/btor2tools-prefix/lib;$(pwd)/minisat-prefix/lib"
+cmake --build boolector-build -v -t boolector-bin
