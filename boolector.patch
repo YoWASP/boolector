@@ -29,12 +29,13 @@ diff --git a/src/sat/btorminisat.cc b/src/sat/btorminisat.cc
 index e37ee585..bc08d612 100644
 --- a/src/sat/btorminisat.cc
 +++ b/src/sat/btorminisat.cc
-@@ -16,6 +16,10 @@
+@@ -16,6 +16,11 @@
  #define __STDC_FORMAT_MACROS
  #endif
  
 +#if defined(__wasm)
 +#include <typeinfo>
++#include <exception>
 +#endif
 +
  #include "minisat/simp/SimpSolver.h"
