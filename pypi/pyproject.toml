@@ -9,10 +9,7 @@ name = "yowasp-boolector"
 description = "boolector Satisfiability Modulo Theories (SMT) solver"
 readme = "README.md"
 authors = [{name = "William D. Jones", email = "thor0505@comcast.net"}]
-license = {text = "ISC"}
-classifiers = [
-	"License :: OSI Approved :: ISC License (ISCL)"
-]
+license = "ISC"
 
 dependencies = [
 	"yowasp-runtime~=1.12",
